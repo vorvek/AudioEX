@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>AudioEX fullscreen repro</title>
+    <style>
+      html, body, video { width: 100%; height: 100%; margin: 0; background: black; }
+    </style>
+  </head>
+  <body>
+    <video id="video" autoplay muted playsinline></video>
+    <script>
+      const canvas = document.createElement("canvas");
+      canvas.width = 640;
+      canvas.height = 360;
+      const context = canvas.getContext("2d");
+      let frame = 0;
+      const draw = () => {
+        context.fillStyle = frame++ % 2 ? "#102040" : "#204010";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        requestAnimationFrame(draw);
+      };
+      draw();
+      document.querySelector("#video").srcObject = canvas.captureStream(30);
+    </script>
+  </body>
+</html>

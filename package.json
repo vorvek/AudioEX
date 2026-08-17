@@ -5,9 +5,10 @@
   "type": "module",
   "description": "Per-tab audio controls for Chrome",
   "scripts": {
-    "check:syntax": "node --check background.js && node --check offscreen.js && node --check popup.js && node --check lib/settings.js && node --check lib/audio-graph.js",
-    "test": "node --test test/settings.test.js test/audio-graph.test.js test/manifest.test.js",
+    "check:syntax": "node --check background.js && node --check offscreen.js && node --check popup.js && node --check lib/settings.js && node --check lib/audio-graph.js && node --check lib/captured-fullscreen.js",
+    "test": "node --test test/settings.test.js test/audio-graph.test.js test/manifest.test.js test/captured-fullscreen.test.js",
     "test:browser": "node test/run-browser-tests.mjs",
+    "test:fullscreen": "node test/run-fullscreen-repro.mjs",
     "check": "npm run check:syntax && npm test && npm run test:browser"
   },
   "engines": {

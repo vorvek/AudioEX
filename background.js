@@ -1,8 +1,14 @@
 import { STORAGE_KEY, normalizeSettings } from "./lib/settings.js";
+import { CapturedFullscreenController } from "./lib/captured-fullscreen.js";
 
 const OFFSCREEN_URL = "offscreen.html";
 let creatingOffscreenDocument = null;
 let lifecycleTail = Promise.resolve();
+const capturedFullscreen = new CapturedFullscreenController(
+  chrome.tabs,
+  chrome.windows,
+  chrome.storage.session
+);
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.target !== "background") {
@@ -24,9 +30,24 @@ chrome.tabCapture.onStatusChanged.addListener((info) => {
     return;
   }
 
-  if (info.status === "stopped" || info.status === "error") {
-    void enqueueLifecycle(() => reconcileCaptureStatus(info.tabId, info.status));
-  }
+  void enqueueLifecycle(async () => {
+    if (info.status === "stopped" || info.status === "error") {
+      await reconcileCaptureStatus(info.tabId, info.status);
+      return;
+    }
+
+    const activeFullscreen =
+      info.fullscreen === true && (info.status === "active" || info.status === "pending");
+    if (activeFullscreen) {
+      await capturedFullscreen.enter(info.tabId);
+    } else {
+      await capturedFullscreen.leave(info.tabId);
+    }
+  });
+});
+
+chrome.windows.onRemoved.addListener((windowId) => {
+  void enqueueLifecycle(() => capturedFullscreen.forgetWindow(windowId));
 });
 
 async function handleMessage(message) {
@@ -103,6 +124,8 @@ async function startCapture(tabId, settings) {
 }
 
 async function stopCapture(tabId, reason) {
+  await capturedFullscreen.leave(tabId);
+
   if (!(await hasOffscreenDocument())) {
     await setBadge(tabId, false);
     return { ok: true, active: false };
@@ -156,6 +179,7 @@ async function sessionEnded(tabId, reason) {
     }
   }
 
+  await capturedFullscreen.leave(tabId);
   await setBadge(tabId, false);
   await notifyPopup(tabId, reason || "Audio capture ended");
 
@@ -174,11 +198,16 @@ async function sessionEnded(tabId, reason) {
 async function reconcileCaptureStatus(tabId, status) {
   try {
     const captures = await chrome.tabCapture.getCapturedTabs();
-    const replacementIsLive = captures.some(
+    const replacement = captures.find(
       (capture) =>
         capture.tabId === tabId && (capture.status === "active" || capture.status === "pending")
     );
-    if (replacementIsLive) {
+    if (replacement) {
+      if (replacement.fullscreen) {
+        await capturedFullscreen.enter(tabId);
+      } else {
+        await capturedFullscreen.leave(tabId);
+      }
       return { ok: true, stale: true };
     }
   } catch {

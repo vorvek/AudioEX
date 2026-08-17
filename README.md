@@ -66,6 +66,12 @@ npm run check
 
 This runs syntax checks, Node unit tests, manifest checks, and real Web Audio tests in headless Chrome. Set `CHROME_PATH` if Chrome or Chromium is installed somewhere unusual.
 
+The Windows fullscreen regression test is headed and changes the test browser's window state briefly:
+
+```powershell
+npm run test:fullscreen
+```
+
 ## License
 
 [MIT](LICENSE)
