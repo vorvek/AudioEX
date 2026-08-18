@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AudioEX",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Per-tab equalizer, soft limiter, volume boost, and mono controls.",
   "author": "vorvek",
   "homepage_url": "https://github.com/vorvek/AudioEX",

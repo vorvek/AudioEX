@@ -2,6 +2,8 @@
 
 AudioEX is a small Chrome extension for changing the audio of individual tabs. It uses Chrome's tab capture and Web Audio APIs, and all processing stays inside the browser.
 
+![AudioEX extension popup in dark mode with vertical equalizer faders](docs/audioex-popup.png)
+
 ## Features
 
 - 10-band equalizer with ±12 dB per band

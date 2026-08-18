@@ -8,8 +8,11 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 test("manifest uses the minimal MV3 capture permissions", async () => {
   const manifest = JSON.parse(await readFile(path.join(root, "manifest.json"), "utf8"));
+  const packageJson = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
 
   assert.equal(manifest.manifest_version, 3);
+  assert.equal(manifest.version, "1.1.0");
+  assert.equal(packageJson.version, manifest.version);
   assert.equal(manifest.minimum_chrome_version, "116");
   assert.deepEqual([...manifest.permissions].sort(), ["offscreen", "storage", "tabCapture"]);
   assert.equal(manifest.host_permissions, undefined);

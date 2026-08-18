@@ -1,9 +1,9 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 13px;
-  background: #f5f6f8;
-  color: #202124;
+  background: #202124;
+  color: #e8eaed;
 }
 
 * {
@@ -11,17 +11,17 @@
 }
 
 body {
-  width: 390px;
+  width: 480px;
   max-height: 600px;
   margin: 0;
   overflow-y: auto;
-  background: #f5f6f8;
+  background: #202124;
 }
 
 main {
   display: grid;
-  gap: 10px;
-  padding: 14px;
+  gap: 7px;
+  padding: 12px;
 }
 
 .app-header {
@@ -37,35 +37,34 @@ h1 {
 }
 
 .app-header p,
-.hint,
-footer {
+.hint {
   margin: 2px 0 0;
-  color: #5f6368;
+  color: #bdc1c6;
 }
 
 .status {
   min-width: 42px;
   padding: 4px 8px;
   border-radius: 999px;
-  background: #dfe1e5;
-  color: #3c4043;
+  background: #5f6368;
+  color: #e8eaed;
   font-size: 12px;
   font-weight: 700;
   text-align: center;
 }
 
 .status[data-active="true"] {
-  background: #ceead6;
-  color: #0d652d;
+  background: #0d652d;
+  color: #ceead6;
 }
 
 .capture-button {
   width: 100%;
-  min-height: 38px;
+  min-height: 36px;
   border: 0;
   border-radius: 7px;
-  background: #1a73e8;
-  color: #fff;
+  background: #ff9933;
+  color: #202124;
   cursor: pointer;
   font: inherit;
   font-weight: 700;
@@ -88,18 +87,18 @@ footer {
 .error {
   margin: 0;
   padding: 8px 10px;
-  border: 1px solid #f6aea9;
+  border: 1px solid #a50e0e;
   border-radius: 6px;
-  background: #fce8e6;
-  color: #a50e0e;
+  background: #5c1d1a;
+  color: #f6aea9;
   line-height: 1.35;
 }
 
 .effect {
-  padding: 10px;
-  border: 1px solid #dadce0;
+  padding: 8px;
+  border: 1px solid #5f6368;
   border-radius: 8px;
-  background: #fff;
+  background: #292a2d;
 }
 
 .effect-heading,
@@ -128,12 +127,45 @@ footer {
 
 .effect-controls {
   display: grid;
-  gap: 7px;
-  margin-top: 9px;
+  gap: 5px;
+  margin-top: 6px;
 }
 
 .equalizer-controls {
-  gap: 5px;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.equalizer-band {
+  display: grid;
+  grid-template-rows: auto 100px auto;
+  gap: 3px;
+  justify-items: center;
+  min-width: 0;
+}
+
+.equalizer-frequency,
+.equalizer-gain {
+  color: #bdc1c6;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.equalizer-slider {
+  position: relative;
+  width: 18px;
+  height: 100px;
+}
+
+.equalizer-slider input[type="range"] {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 18px;
+  margin: 0;
+  transform: translate(-50%, -50%) rotate(-90deg);
 }
 
 .control-row {
@@ -143,11 +175,11 @@ footer {
 }
 
 .control-row > span {
-  color: #3c4043;
+  color: #bdc1c6;
 }
 
 .control-row output {
-  color: #3c4043;
+  color: #bdc1c6;
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
@@ -155,7 +187,7 @@ footer {
 input[type="range"] {
   width: 100%;
   margin: 0;
-  accent-color: #1a73e8;
+  accent-color: #ff9933;
 }
 
 .select-row {
@@ -167,9 +199,9 @@ select {
   flex: 1;
   min-width: 0;
   padding: 5px;
-  border: 1px solid #bdc1c6;
+  border: 1px solid #5f6368;
   border-radius: 5px;
-  background: #fff;
+  background: #292a2d;
   color: inherit;
   font: inherit;
 }
@@ -178,63 +210,11 @@ select {
   padding: 3px 6px;
   border: 0;
   background: transparent;
-  color: #1967d2;
+  color: #ff9933;
   cursor: pointer;
   font: inherit;
 }
 
 .effect[data-enabled="false"] .effect-controls {
   opacity: 0.48;
-}
-
-footer {
-  padding-top: 2px;
-  font-size: 11px;
-  text-align: center;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root,
-  body {
-    background: #202124;
-    color: #e8eaed;
-  }
-
-  .app-header p,
-  .hint,
-  footer,
-  .control-row > span,
-  .control-row output {
-    color: #bdc1c6;
-  }
-
-  .effect {
-    border-color: #5f6368;
-    background: #292a2d;
-  }
-
-  .status {
-    background: #5f6368;
-    color: #e8eaed;
-  }
-
-  .status[data-active="true"] {
-    background: #0d652d;
-    color: #ceead6;
-  }
-
-  select {
-    border-color: #5f6368;
-    background: #292a2d;
-  }
-
-  .error {
-    border-color: #a50e0e;
-    background: #5c1d1a;
-    color: #f6aea9;
-  }
-
-  .text-button {
-    color: #8ab4f8;
-  }
 }

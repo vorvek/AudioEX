@@ -151,9 +151,10 @@ function bindRange(input, assign, renderValue) {
 function buildEqualizer() {
   EQ_BANDS.forEach((band, index) => {
     const label = document.createElement("label");
-    label.className = "control-row";
+    label.className = "equalizer-band";
 
     const name = document.createElement("span");
+    name.className = "equalizer-frequency";
     name.textContent = band.label;
 
     const input = document.createElement("input");
@@ -163,8 +164,13 @@ function buildEqualizer() {
     input.step = "0.5";
     input.setAttribute("aria-label", `${band.label} Hz equalizer gain`);
 
+    const slider = document.createElement("span");
+    slider.className = "equalizer-slider";
+    slider.append(input);
+
     const output = document.createElement("output");
-    label.append(name, input, output);
+    output.className = "equalizer-gain";
+    label.append(name, slider, output);
     elements.equalizerControls.append(label);
     equalizerRows.push({ input, output });
 
