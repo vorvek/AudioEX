@@ -9,9 +9,9 @@
   <body>
     <main>
       <header class="app-header">
-        <div>
+        <div class="brand">
+          <img class="brand-icon" src="icons/audioex.svg" alt="" width="40" height="40">
           <h1>AudioEX</h1>
-          <p>Audio controls for this tab</p>
         </div>
         <span id="status" class="status" data-active="false" aria-live="polite">Off</span>
       </header>
@@ -22,7 +22,11 @@
       <p id="capture-hint" class="hint">Settings are remembered for the next enabled tab.</p>
       <p id="error" class="error" role="alert" hidden></p>
 
-      <section class="effect" id="equalizer-section">
+      <div id="effect-chain" class="effect-chain" aria-label="Audio processing order">
+      <section class="effect" id="equalizer-section" data-effect-id="equalizer">
+        <button class="drag-handle" type="button" draggable="true" title="Drag to reorder" aria-label="Move equalizer">
+          <span class="drag-dots" aria-hidden="true"></span>
+        </button>
         <div class="effect-heading">
           <label class="feature-toggle">
             <input id="equalizer-enabled" type="checkbox">
@@ -33,7 +37,10 @@
         <div id="equalizer-controls" class="effect-controls equalizer-controls"></div>
       </section>
 
-      <section class="effect" id="compressor-section">
+      <section class="effect" id="compressor-section" data-effect-id="compressor">
+        <button class="drag-handle" type="button" draggable="true" title="Drag to reorder" aria-label="Move compressor">
+          <span class="drag-dots" aria-hidden="true"></span>
+        </button>
         <label class="feature-toggle">
           <input id="compressor-enabled" type="checkbox">
           <span>Compressor / soft limiter</span>
@@ -49,10 +56,18 @@
             <input id="compressor-ratio" type="range" min="2" max="20" step="1">
             <output id="compressor-ratio-value" for="compressor-ratio"></output>
           </label>
+          <label class="control-row" for="compressor-makeup-gain">
+            <span>Makeup</span>
+            <input id="compressor-makeup-gain" type="range" min="0" max="24" step="0.5">
+            <output id="compressor-makeup-gain-value" for="compressor-makeup-gain"></output>
+          </label>
         </div>
       </section>
 
-      <section class="effect" id="amplifier-section">
+      <section class="effect" id="amplifier-section" data-effect-id="amplifier">
+        <button class="drag-handle" type="button" draggable="true" title="Drag to reorder" aria-label="Move amplifier">
+          <span class="drag-dots" aria-hidden="true"></span>
+        </button>
         <label class="feature-toggle">
           <input id="amplifier-enabled" type="checkbox">
           <span>Volume amplifier</span>
@@ -66,7 +81,10 @@
         </div>
       </section>
 
-      <section class="effect" id="mono-section">
+      <section class="effect" id="mono-section" data-effect-id="mono">
+        <button class="drag-handle" type="button" draggable="true" title="Drag to reorder" aria-label="Move mono audio">
+          <span class="drag-dots" aria-hidden="true"></span>
+        </button>
         <label class="feature-toggle">
           <input id="mono-enabled" type="checkbox">
           <span>Mono audio</span>
@@ -82,6 +100,7 @@
           </label>
         </div>
       </section>
+      </div>
     </main>
     <script type="module" src="popup.js"></script>
   </body>

@@ -1,23 +1,24 @@
-# AudioEX
+# <img src="icons/audioex.svg" alt="" width="32" height="32"> AudioEX
 
 AudioEX is a small Chrome extension for changing the audio of individual tabs. It uses Chrome's tab capture and Web Audio APIs, and all processing stays inside the browser.
 
-![AudioEX extension popup in dark mode with vertical equalizer faders](docs/audioex-popup.png)
+![AudioEX extension popup with draggable processor cards and vertical equalizer faders](docs/audioex-popup.png)
 
 ## Features
 
 - 10-band equalizer with ±12 dB per band
-- Compressor / soft limiter with threshold and ratio controls
+- Compressor / soft limiter with threshold, ratio, and up to +24 dB of makeup gain
 - Volume amplifier with up to +12 dB of boost
 - Mono routing with three modes:
   - Copy left to right
   - Copy right to left
   - Sum left and right to both channels
 - Independent enable switch for every processor
+- Drag-and-drop processor ordering with keyboard reordering
 - Per-tab capture with settings remembered for the next tab
 - Multiple captured tabs at the same time
 
-The mono sum is normalized as `(L + R) / 2` to preserve headroom. The compressor sits after the equalizer and amplifier so it can catch their boosted output.
+The mono sum is normalized as `(L + R) / 2` to preserve headroom.
 
 ## Install
 
@@ -46,13 +47,15 @@ Captured tab
   -> 10-band EQ
   -> stereo / mono routing matrix
   -> volume amplifier
-  -> compressor / matched bypass
+  -> compressor / matched bypass + makeup gain
   -> browser audio output
 ```
 
+This is the default order. Drag any processor by its left handle to change the live signal path; the order is remembered with the other settings.
+
 Chrome stops the tab's original local playback while it is captured. AudioEX reconnects the processed signal to the browser output, including when every processor is bypassed.
 
-The compressor uses the browser's `DynamicsCompressorNode`. It behaves as a soft limiter, not a guaranteed brick-wall limiter. Its bypass path has a matching 6 ms delay so enabling it does not change timing.
+The compressor uses the browser's `DynamicsCompressorNode`. It behaves as a soft limiter, not a guaranteed brick-wall limiter. Its bypass path has a matching 6 ms delay so enabling it does not change timing, and makeup gain applies only to the compressed path.
 
 ## Privacy
 

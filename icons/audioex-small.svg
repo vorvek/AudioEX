@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <defs>
+    <linearGradient id="waveform" x1="0" y1="0" x2="16" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="0.43" stop-color="#ff9933"/>
+      <stop offset="0.57" stop-color="#ff9933"/>
+      <stop offset="1" stop-color="#fff"/>
+    </linearGradient>
+  </defs>
+  <g fill="url(#waveform)" stroke="#57300d" stroke-opacity="0.5" stroke-width="0.6">
+    <rect x="1" y="5" width="2" height="6" rx="1"/>
+    <rect x="4" y="2" width="2" height="12" rx="1"/>
+    <rect x="7" width="2" height="16" rx="1"/>
+    <rect x="10" y="3" width="2" height="10" rx="1"/>
+    <rect x="13" y="4" width="2" height="8" rx="1"/>
+  </g>
+</svg>

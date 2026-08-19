@@ -10,6 +10,8 @@ try {
   await testAmplifier();
   await testEqualizer();
   await testCompressor();
+  await testCompressorMakeupGain();
+  await testProcessorOrder();
   document.body.dataset.status = "passed";
   document.querySelector("#result").textContent = "AUDIOEX_BROWSER_TESTS_PASSED";
 } catch (error) {
@@ -84,6 +86,47 @@ async function testCompressor() {
 
   if (!(compressedRms < bypassRms * 0.9)) {
     throw new Error(`compressor: expected ${compressedRms} below ${bypassRms * 0.9}`);
+  }
+}
+
+async function testCompressorMakeupGain() {
+  const base = normalizeSettings({
+    compressor: { enabled: true, threshold: -12, ratio: 20, makeupGainDb: 0 }
+  });
+  const boosted = normalizeSettings({
+    compressor: { enabled: true, threshold: -12, ratio: 20, makeupGainDb: 6 }
+  });
+  const baseRender = await renderConstant(0.8, base);
+  const boostedRender = await renderConstant(0.8, boosted);
+  const start = Math.round(SAMPLE_RATE * 0.3);
+  const ratio =
+    rms(boostedRender.getChannelData(0), start) /
+    rms(baseRender.getChannelData(0), start);
+
+  closeTo(ratio, 10 ** (6 / 20), 0.002, "compressor makeup gain");
+}
+
+async function testProcessorOrder() {
+  const amplifierFirst = normalizeSettings({
+    effectOrder: ["equalizer", "mono", "amplifier", "compressor"],
+    compressor: { enabled: true, threshold: -18, ratio: 20 },
+    amplifier: { enabled: true, gainDb: 12 }
+  });
+  const compressorFirst = normalizeSettings({
+    effectOrder: ["equalizer", "mono", "compressor", "amplifier"],
+    compressor: { enabled: true, threshold: -18, ratio: 20 },
+    amplifier: { enabled: true, gainDb: 12 }
+  });
+  const amplifierFirstRender = await renderConstant(0.2, amplifierFirst);
+  const compressorFirstRender = await renderConstant(0.2, compressorFirst);
+  const start = Math.round(SAMPLE_RATE * 0.3);
+  const amplifierFirstRms = rms(amplifierFirstRender.getChannelData(0), start);
+  const compressorFirstRms = rms(compressorFirstRender.getChannelData(0), start);
+
+  if (!(compressorFirstRms > amplifierFirstRms * 2.5)) {
+    throw new Error(
+      `processor order: expected compressor-first ${compressorFirstRms} above amplifier-first ${amplifierFirstRms}`
+    );
   }
 }
 

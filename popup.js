@@ -1,10 +1,11 @@
-import { EQ_BANDS, normalizeSettings } from "./lib/settings.js";
+import { EFFECT_IDS, EQ_BANDS, normalizeSettings } from "./lib/settings.js";
 
 const elements = {
   status: document.querySelector("#status"),
   captureToggle: document.querySelector("#capture-toggle"),
   captureHint: document.querySelector("#capture-hint"),
   error: document.querySelector("#error"),
+  effectChain: document.querySelector("#effect-chain"),
   equalizerSection: document.querySelector("#equalizer-section"),
   equalizerEnabled: document.querySelector("#equalizer-enabled"),
   equalizerControls: document.querySelector("#equalizer-controls"),
@@ -15,6 +16,8 @@ const elements = {
   compressorThresholdValue: document.querySelector("#compressor-threshold-value"),
   compressorRatio: document.querySelector("#compressor-ratio"),
   compressorRatioValue: document.querySelector("#compressor-ratio-value"),
+  compressorMakeupGain: document.querySelector("#compressor-makeup-gain"),
+  compressorMakeupGainValue: document.querySelector("#compressor-makeup-gain-value"),
   amplifierSection: document.querySelector("#amplifier-section"),
   amplifierEnabled: document.querySelector("#amplifier-enabled"),
   amplifierGain: document.querySelector("#amplifier-gain"),
@@ -24,6 +27,9 @@ const elements = {
   monoMode: document.querySelector("#mono-mode")
 };
 
+const effectSections = Object.fromEntries(
+  EFFECT_IDS.map((id) => [id, document.querySelector(`[data-effect-id="${id}"]`)])
+);
 const equalizerRows = [];
 let tabId = null;
 let settings = normalizeSettings();
@@ -31,6 +37,8 @@ let active = false;
 let busy = false;
 let updateTimer = null;
 let updateTail = Promise.resolve();
+let draggedSection = null;
+let dragStartOrder = "";
 
 buildEqualizer();
 bindEvents();
@@ -57,6 +65,8 @@ async function initialize() {
 }
 
 function bindEvents() {
+  bindEffectReordering();
+
   elements.captureToggle.addEventListener("click", () => {
     void toggleCapture();
   });
@@ -91,6 +101,14 @@ function bindEvents() {
     elements.compressorRatio,
     (value) => {
       settings.compressor.ratio = value;
+    },
+    renderCompressor
+  );
+
+  bindRange(
+    elements.compressorMakeupGain,
+    (value) => {
+      settings.compressor.makeupGainDb = value;
     },
     renderCompressor
   );
@@ -133,6 +151,94 @@ function bindEvents() {
       renderCaptureState();
     }
   });
+}
+
+function bindEffectReordering() {
+  for (const handle of elements.effectChain.querySelectorAll(".drag-handle")) {
+    handle.addEventListener("dragstart", (event) => {
+      draggedSection = handle.closest(".effect");
+      dragStartOrder = readEffectOrder().join(",");
+      draggedSection.classList.add("is-dragging");
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", draggedSection.dataset.effectId);
+    });
+    handle.addEventListener("dragend", finishEffectDrag);
+    handle.addEventListener("keydown", (event) => moveEffectWithKeyboard(event, handle));
+  }
+
+  elements.effectChain.addEventListener("dragover", (event) => {
+    if (!draggedSection) {
+      return;
+    }
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    const nextSection = [...elements.effectChain.querySelectorAll(".effect")].find(
+      (section) =>
+        section !== draggedSection &&
+        event.clientY < section.getBoundingClientRect().top + section.offsetHeight / 2
+    );
+    elements.effectChain.insertBefore(draggedSection, nextSection || null);
+  });
+
+  elements.effectChain.addEventListener("drop", (event) => {
+    if (!draggedSection) {
+      return;
+    }
+    event.preventDefault();
+    finishEffectDrag();
+  });
+}
+
+function finishEffectDrag() {
+  if (!draggedSection) {
+    return;
+  }
+
+  draggedSection.classList.remove("is-dragging");
+  draggedSection = null;
+  if (readEffectOrder().join(",") !== dragStartOrder) {
+    commitEffectOrder();
+  }
+  dragStartOrder = "";
+}
+
+function moveEffectWithKeyboard(event, handle) {
+  if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) {
+    return;
+  }
+
+  const section = handle.closest(".effect");
+  event.preventDefault();
+  if (event.key === "ArrowUp" && section.previousElementSibling) {
+    elements.effectChain.insertBefore(section, section.previousElementSibling);
+  } else if (event.key === "ArrowDown" && section.nextElementSibling) {
+    elements.effectChain.insertBefore(section.nextElementSibling, section);
+  } else if (event.key === "Home") {
+    elements.effectChain.prepend(section);
+  } else if (event.key === "End") {
+    elements.effectChain.append(section);
+  }
+  commitEffectOrder();
+  handle.focus();
+}
+
+function commitEffectOrder() {
+  const effectOrder = readEffectOrder();
+  if (effectOrder.every((id, index) => id === settings.effectOrder[index])) {
+    renderEffectOrder();
+    return;
+  }
+
+  settings.effectOrder = effectOrder;
+  renderEffectOrder();
+  scheduleSettingsUpdate(true);
+}
+
+function readEffectOrder() {
+  return [...elements.effectChain.querySelectorAll(".effect")].map(
+    (section) => section.dataset.effectId
+  );
 }
 
 function bindRange(input, assign, renderValue) {
@@ -254,12 +360,33 @@ async function sendCommand(type, payload = {}) {
 
 function render() {
   settings = normalizeSettings(settings);
+  renderEffectOrder();
   renderCaptureState();
   renderFeatures();
   renderEqualizer();
   renderCompressor();
   renderAmplifier();
   elements.monoMode.value = settings.mono.mode;
+}
+
+function renderEffectOrder() {
+  settings.effectOrder.forEach((id) => elements.effectChain.append(effectSections[id]));
+  settings.effectOrder.forEach((id, index) => {
+    const handle = effectSections[id].querySelector(".drag-handle");
+    handle.setAttribute(
+      "aria-label",
+      `Move ${effectLabel(id)}. Position ${index + 1} of ${EFFECT_IDS.length}`
+    );
+  });
+}
+
+function effectLabel(id) {
+  return {
+    equalizer: "equalizer",
+    compressor: "compressor",
+    amplifier: "amplifier",
+    mono: "mono audio"
+  }[id];
 }
 
 function renderCaptureState() {
@@ -291,7 +418,7 @@ function renderFeatures() {
     elements.compressorSection,
     elements.compressorEnabled,
     settings.compressor.enabled,
-    [elements.compressorThreshold, elements.compressorRatio]
+    [elements.compressorThreshold, elements.compressorRatio, elements.compressorMakeupGain]
   );
   setFeatureState(
     elements.amplifierSection,
@@ -336,6 +463,14 @@ function renderCompressor() {
   elements.compressorRatio.setAttribute(
     "aria-valuetext",
     `${settings.compressor.ratio.toFixed(0)} to 1`
+  );
+  elements.compressorMakeupGain.value = String(settings.compressor.makeupGainDb);
+  elements.compressorMakeupGainValue.textContent = formatDb(
+    settings.compressor.makeupGainDb
+  );
+  elements.compressorMakeupGain.setAttribute(
+    "aria-valuetext",
+    formatDb(settings.compressor.makeupGainDb)
   );
 }
 

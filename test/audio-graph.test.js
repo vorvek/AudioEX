@@ -46,6 +46,7 @@ test("compiled settings bypass disabled processors and clamp high bands", () => 
   assert.equal(compiled.amplifierGain, 1);
   assert.equal(compiled.compressor.dryGain, 1);
   assert.equal(compiled.compressor.wetGain, 0);
+  assert.equal(compiled.compressor.makeupGain, 1);
 });
 
 test("compiled settings convert enabled boost from dB to linear gain", () => {
@@ -53,11 +54,13 @@ test("compiled settings convert enabled boost from dB to linear gain", () => {
   settings.amplifier.enabled = true;
   settings.amplifier.gainDb = 6;
   settings.compressor.enabled = true;
+  settings.compressor.makeupGainDb = 6;
   const compiled = compileDspSettings(settings, 48000);
 
   assert.ok(Math.abs(compiled.amplifierGain - 1.9952623149688795) < 1e-12);
   assert.equal(compiled.compressor.dryGain, 0);
   assert.equal(compiled.compressor.wetGain, 1);
+  assert.ok(Math.abs(compiled.compressor.makeupGain - 1.9952623149688795) < 1e-12);
 });
 
 test("graph creation wires ten EQ bands and starts fully bypassed", () => {
@@ -74,9 +77,15 @@ test("graph creation wires ten EQ bands and starts fully bypassed", () => {
   assert.equal(graph.nodes.rightRight.gain.value, 1);
   assert.equal(graph.nodes.amplifier.gain.value, 1);
   assert.equal(graph.nodes.dryDelay.delayTime.value, 0.006);
+  assert.equal(graph.nodes.makeupGain.gain.value, 1);
   assert.equal(graph.nodes.dryGain.gain.value, 1);
   assert.equal(graph.nodes.wetGain.gain.value, 0);
   assert.equal(source.connections[0].destination, graph.nodes.input);
+  assert.equal(graph.nodes.input.connections[0].destination, graph.nodes.filters[0]);
+  assert.equal(graph.nodes.filters.at(-1).connections[0].destination, graph.nodes.splitter);
+  assert.equal(graph.nodes.merger.connections[0].destination, graph.nodes.amplifier);
+  assert.equal(graph.nodes.amplifier.connections[0].destination, graph.nodes.compressorInput);
+  assert.equal(graph.nodes.compressorOutput.connections[0].destination, graph.nodes.output);
 });
 
 test("graph applies a complete settings snapshot", () => {
@@ -85,7 +94,7 @@ test("graph applies a complete settings snapshot", () => {
   const graph = createAudioGraph(context, source, normalizeSettings());
   const settings = normalizeSettings({
     equalizer: { enabled: true, gains: EQ_BANDS.map((_, index) => index - 4.5) },
-    compressor: { enabled: true, threshold: -9, ratio: 16 },
+    compressor: { enabled: true, threshold: -9, ratio: 16, makeupGainDb: 4.5 },
     amplifier: { enabled: true, gainDb: 9 },
     mono: { enabled: true, mode: MONO_MODES.COPY_RIGHT }
   });
@@ -103,8 +112,26 @@ test("graph applies a complete settings snapshot", () => {
   assert.ok(Math.abs(graph.nodes.amplifier.gain.value - 2.8183829312644537) < 1e-12);
   assert.equal(graph.nodes.compressor.threshold.value, -9);
   assert.equal(graph.nodes.compressor.ratio.value, 16);
+  assert.ok(Math.abs(graph.nodes.makeupGain.gain.value - 10 ** (4.5 / 20)) < 1e-12);
   assert.equal(graph.nodes.dryGain.gain.value, 0);
   assert.equal(graph.nodes.wetGain.gain.value, 1);
+});
+
+test("graph reconnects processor blocks in the requested order", () => {
+  const context = new FakeAudioContext();
+  const source = new FakeNode("source");
+  const graph = createAudioGraph(context, source, normalizeSettings());
+  const settings = normalizeSettings({
+    effectOrder: ["compressor", "equalizer", "amplifier", "mono"]
+  });
+
+  graph.apply(settings);
+
+  assert.equal(graph.nodes.input.connections[0].destination, graph.nodes.compressorInput);
+  assert.equal(graph.nodes.compressorOutput.connections[0].destination, graph.nodes.filters[0]);
+  assert.equal(graph.nodes.filters.at(-1).connections[0].destination, graph.nodes.amplifier);
+  assert.equal(graph.nodes.amplifier.connections[0].destination, graph.nodes.splitter);
+  assert.equal(graph.nodes.merger.connections[0].destination, graph.nodes.output);
 });
 
 class FakeAudioParam {
@@ -135,8 +162,11 @@ class FakeNode {
     return destination;
   }
 
-  disconnect() {
+  disconnect(destination) {
     this.disconnected = true;
+    this.connections = destination
+      ? this.connections.filter((connection) => connection.destination !== destination)
+      : [];
   }
 }
 
